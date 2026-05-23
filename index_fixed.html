@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RR Calculator — Clean Tool</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070910;
+      --card: rgba(17, 20, 32, .88);
+      --card2: rgba(25, 29, 45, .88);
+      --field: rgba(8, 11, 19, .94);
+      --border: rgba(255,255,255,.09);
+      --border2: rgba(103,255,209,.28);
+      --text: #f1f5ff;
+      --muted: #8790ad;
+      --accent: #00e5a0;
+      --accent2: #67ffd1;
+      --warn: #ffbe35;
+      --loss: #ff4f73;
+      --blue: #76b6ff;
+      --purple: #c79bff;
+      --shadow: 0 18px 60px rgba(0,0,0,.42);
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      font-family: 'Sarabun', sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(0,229,160,.15), transparent 34%),
+        radial-gradient(circle at 90% 18%, rgba(118,182,255,.12), transparent 30%),
+        linear-gradient(180deg, #070910 0%, #0b0d15 100%);
+      padding: 18px;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(20,24,38,.96), rgba(12,15,25,.92));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .topbar::after {
+      content: '';
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(0,229,160,.13), transparent 66%);
+      pointer-events: none;
+    }
+
+    .brand { position: relative; z-index: 1; }
+    .kicker {
+      font: 700 11px/1 'IBM Plex Mono', monospace;
+      letter-spacing: .16em;
+      color: var(--accent2);
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: -.045em;
+      line-height: 1;
+    }
+
+    .status-pill {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 5px;
+      justify-items: end;
+      white-space: nowrap;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .status-pill span:first-child { color: var(--muted); font-size: 11px; }
+    .status-pill span:last-child {
+      color: var(--accent2);
+      border: 1px solid var(--border2);
+      background: rgba(0,229,160,.09);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(330px, .92fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+
+    .tag {
+      font: 700 10px/1 'IBM Plex Mono', monospace;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background: var(--card2);
+      border-radius: 999px;
+      padding: 7px 9px;
+      white-space: nowrap;
+    }
+
+    .inputs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .field {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--field);
+      padding: 10px 11px;
+      transition: border-color .16s ease, transform .16s ease, background .16s ease;
+    }
+    .field:focus-within {
+      border-color: rgba(103,255,209,.55);
+      background: rgba(10, 14, 23, .98);
+      transform: translateY(-1px);
+    }
+    .wide { grid-column: 1 / -1; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+    label span:last-child { font-family: 'IBM Plex Mono', monospace; opacity: .82; }
+
+    input, select {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font: 700 18px/1.25 'IBM Plex Mono', monospace;
+      padding: 0;
+    }
+    select { font-size: 15px; cursor: pointer; }
+    option { background: #111420; color: var(--text); }
+    input::placeholder { color: #434a60; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 11px;
+    }
+    button {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--card2);
+      color: var(--text);
+      padding: 12px 13px;
+      font: 700 13px/1 'IBM Plex Mono', monospace;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+    button:hover { transform: translateY(-1px); border-color: rgba(103,255,209,.46); }
+    button:active { transform: translateY(0); }
+    .primary {
+      color: var(--accent2);
+      border-color: rgba(0,229,160,.34);
+      background: rgba(0,229,160,.10);
+    }
+    .ghost { color: var(--muted); }
+    .danger {
+      color: var(--loss);
+      border-color: rgba(255,79,115,.28);
+      background: rgba(255,79,115,.08);
+    }
+
+    .split-wrap {
+      margin-top: 14px;
+      display: grid;
+      gap: 9px;
+    }
+    .split-row {
+      display: grid;
+      grid-template-columns: .75fr 1fr 82px 42px;
+      gap: 8px;
+      align-items: end;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(8,11,19,.72);
+    }
+    .split-row .field { padding: 8px 9px; border-radius: 14px; }
+    .rr-box {
+      min-height: 58px;
+      border: 1px solid rgba(0,229,160,.23);
+      background: rgba(0,229,160,.08);
+      border-radius: 14px;
+      display: grid;
+      align-content: center;
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .rr-box small { color: var(--muted); font-size: 9px; margin-bottom: 3px; }
+    .rr-box b { color: var(--accent2); font-size: 16px; }
+    .rr-box.bad { border-color: rgba(255,79,115,.28); background: rgba(255,79,115,.08); }
+    .rr-box.bad b { color: var(--loss); }
+    .xbtn { min-height: 58px; padding: 0; font-size: 20px; }
+
+    .result-card {
+      border: 1px solid rgba(0,229,160,.17);
+      border-radius: 22px;
+      padding: 17px;
+      background: linear-gradient(180deg, rgba(25,29,45,.98), rgba(9,12,21,.98));
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .result-card::after {
+      content: '';
+      position: absolute;
+      right: -80px;
+      bottom: -95px;
+      width: 230px;
+      height: 230px;
+      background: radial-gradient(circle, rgba(0,229,160,.13), transparent 70%);
+      pointer-events: none;
+    }
+    .result-label { color: var(--muted); font-size: 12px; margin-bottom: 6px; position: relative; z-index: 1; }
+    .big {
+      position: relative;
+      z-index: 1;
+      font: 700 clamp(40px, 7vw, 68px)/.92 'IBM Plex Mono', monospace;
+      letter-spacing: -.07em;
+      color: var(--accent);
+    }
+    .big.warn { color: var(--warn); }
+    .big.loss { color: var(--loss); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+    .metric {
+      min-height: 76px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--field);
+      padding: 11px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+    }
+    .metric .k { color: var(--muted); font-size: 11px; }
+    .metric .v {
+      font: 700 18px/1.18 'IBM Plex Mono', monospace;
+      word-break: break-word;
+    }
+    .green { color: var(--accent2); }
+    .red { color: var(--loss); }
+    .blue { color: var(--blue); }
+    .warn { color: var(--warn); }
+    .purple { color: var(--purple); }
+
+    .note {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 11px 12px;
+      color: var(--muted);
+      background: rgba(25,29,45,.52);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .note.good { color: var(--accent2); border-color: rgba(0,229,160,.22); }
+    .note.bad { color: var(--loss); border-color: rgba(255,79,115,.26); }
+    .note.warn { color: var(--warn); border-color: rgba(255,190,53,.26); }
+
+    .compact-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+      margin-top: 10px;
+    }
+    .compact-item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(8,11,19,.72);
+      padding: 10px;
+      display: grid;
+      gap: 4px;
+      min-height: 62px;
+    }
+    .compact-item span { color: var(--muted); font-size: 10px; }
+    .compact-item b { font: 700 15px/1.15 'IBM Plex Mono', monospace; }
+
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      .status-pill { justify-items: start; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 640px) {
+      body { padding: 11px; }
+      .topbar, .panel { border-radius: 20px; padding: 14px; }
+      .inputs, .metrics, .actions, .compact-bar { grid-template-columns: 1fr; }
+      .split-row { grid-template-columns: 1fr 1fr; }
+      .rr-box, .xbtn { min-height: 52px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="kicker">PRICE BASED RR CALCULATOR</div>
+        <h1>เครื่องคำนวณ RR จริง</h1>
+      </div>
+      <div class="status-pill">
+        <span>DIRECTION</span>
+        <span id="directionTag">AUTO</span>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Input</h2>
+          <span class="tag">CENT / XAU / FOREX</span>
+        </div>
+
+        <div class="inputs">
+          <div class="field">
+            <label>Balance <span>cent</span></label>
+            <input id="balance" data-number inputmode="decimal" autocomplete="off" value="6632.9">
+          </div>
+          <div class="field">
+            <label>Risk <span>%</span></label>
+            <input id="riskPct" data-number inputmode="decimal" autocomplete="off" value="10">
+          </div>
+          <div class="field">
+            <label>Entry <span>price</span></label>
+            <input id="entryPrice" data-number inputmode="decimal" autocomplete="off" value="4500.000">
+          </div>
+          <div class="field">
+            <label>Stop Loss <span>price</span></label>
+            <input id="slPrice" data-number inputmode="decimal" autocomplete="off" value="4450.000">
+          </div>
+          <div class="field">
+            <label>Direction <span>mode</span></label>
+            <select id="direction">
+              <option value="auto" selected>Auto Detect</option>
+              <option value="buy">Buy / Long</option>
+              <option value="sell">Sell / Short</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Actual Lot <span>lot</span></label>
+            <input id="actualLot" data-number inputmode="decimal" autocomplete="off" value="0.70">
+          </div>
+          <div class="field">
+            <label>Contract <span>size</span></label>
+            <input id="contract" data-number inputmode="decimal" autocomplete="off" value="100">
+          </div>
+          <div class="field">
+            <label>Point Size <span>price</span></label>
+            <input id="pointSize" data-number inputmode="decimal" autocomplete="off" value="0.01">
+          </div>
+          <div class="field wide">
+            <label>Point Value Mode <span>mode</span></label>
+            <select id="mode">
+              <option value="auto" selected>Auto: contract × point size</option>
+              <option value="manual">Manual: cent / point / 1 lot</option>
+            </select>
+          </div>
+          <div class="field wide" id="manualField">
+            <label>Manual Value <span>cent/point/lot</span></label>
+            <input id="manualValue" data-number inputmode="decimal" autocomplete="off" value="1">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" type="button" id="addSplitBtn">+ ADD TP</button>
+          <button class="ghost" type="button" id="resetBtn">RESET</button>
+        </div>
+
+        <div class="split-wrap">
+          <div class="panel-head" style="margin: 2px 0 0;">
+            <h2>TP Split</h2>
+            <span class="tag" id="splitCount">2 ORDERS</span>
+          </div>
+          <div id="splits"></div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <h2>Output</h2>
+          <span class="tag" id="saveTag">SAVED</span>
+        </div>
+
+        <div class="result-card">
+          <div class="result-label">REAL RR</div>
+          <div id="realRR" class="big">0.00R</div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><div class="k">Risk Money</div><div id="riskMoney" class="v red">0</div></div>
+          <div class="metric"><div class="k">Suggested Lot</div><div id="suggestLot" class="v green">0</div></div>
+          <div class="metric"><div class="k">SL Distance</div><div id="slDistance" class="v blue">0</div></div>
+          <div class="metric"><div class="k">Actual Risk</div><div id="actualRisk" class="v warn">0</div></div>
+          <div class="metric"><div class="k">Actual Risk %</div><div id="actualRiskPct" class="v warn">0%</div></div>
+          <div class="metric"><div class="k">Real Profit</div><div id="realProfit" class="v green">0</div></div>
+          <div class="metric"><div class="k">Point Value</div><div id="pointValue" class="v purple">0</div></div>
+          <div class="metric"><div class="k">Closed Total</div><div id="totalPercent" class="v blue">0%</div></div>
+        </div>
+
+        <div class="compact-bar">
+          <div class="compact-item"><span>AVG TP RR</span><b id="avgRR">0.00R</b></div>
+          <div class="compact-item"><span>BEST TP RR</span><b id="bestRR">0.00R</b></div>
+          <div class="compact-item"><span>OPEN LEFT</span><b id="openLeft">0%</b></div>
+        </div>
+
+        <div id="mainNote" class="note">READY</div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'rr_calculator_clean_v2';
+
+    let splitData = [
+      { percent: '50', price: '4535.262' },
+      { percent: '50', price: '4561.224' }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    function toNumber(value) {
+      if (typeof value !== 'string') value = String(value ?? '');
+      const cleaned = value.replace(/,/g, '.').replace(/[^0-9.\-]/g, '');
+      const n = parseFloat(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function rawNum(id) {
+      return toNumber($(id).value);
+    }
+
+    function fmt(n, digits = 2) {
+      if (!Number.isFinite(n)) return '0';
+      return Number(n).toLocaleString('en-US', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      });
+    }
+
+    function getDirection(entry, sl) {
+      const selected = $('direction').value;
+      if (selected === 'buy') return 'buy';
+      if (selected === 'sell') return 'sell';
+      if (entry > sl) return 'buy';
+      if (entry < sl) return 'sell';
+      return 'unknown';
+    }
+
+    function getPointValuePerLot() {
+      if ($('mode').value === 'manual') return rawNum('manualValue');
+      return rawNum('contract') * rawNum('pointSize');
+    }
+
+    function getRRForTP(entry, sl, tp, dir) {
+      if (entry === sl) return 0;
+      if (dir === 'buy') {
+        const risk = entry - sl;
+        const reward = tp - entry;
+        return risk > 0 ? reward / risk : 0;
+      }
+      if (dir === 'sell') {
+        const risk = sl - entry;
+        const reward = entry - tp;
+        return risk > 0 ? reward / risk : 0;
+      }
+      return 0;
+    }
+
+    function getRiskDistancePrice(entry, sl, dir) {
+      if (dir === 'buy') return entry - sl;
+      if (dir === 'sell') return sl - entry;
+      return Math.abs(entry - sl);
+    }
+
+    function calculate({ save = true } = {}) {
+      const balance = rawNum('balance');
+      const riskPct = rawNum('riskPct');
+      const entry = rawNum('entryPrice');
+      const sl = rawNum('slPrice');
+      const actualLot = rawNum('actualLot');
+      const pointSize = rawNum('pointSize');
+      const dir = getDirection(entry, sl);
+
+      const slPoints = pointSize > 0 ? Math.abs(entry - sl) / pointSize : 0;
+      const riskMoney = balance * riskPct / 100;
+      const pointValuePerLot = getPointValuePerLot();
+      const pointValueActual = pointValuePerLot * actualLot;
+      const suggestLot = slPoints > 0 && pointValuePerLot > 0 ? riskMoney / (slPoints * pointValuePerLot) : 0;
+      const actualRisk = slPoints * pointValueActual;
+      const actualRiskPct = balance > 0 ? actualRisk / balance * 100 : 0;
+
+      let realRR = 0;
+      let totalPct = 0;
+      let weightedCount = 0;
+      let bestRR = -Infinity;
+      let hasBadTP = false;
+
+      splitData.forEach((s, index) => {
+        const percent = toNumber(s.percent);
+        const tp = toNumber(s.price);
+        const rr = getRRForTP(entry, sl, tp, dir);
+        totalPct += percent;
+        realRR += (percent / 100) * rr;
+        if (percent > 0) weightedCount += percent / 100;
+        if (percent > 0 && rr > bestRR) bestRR = rr;
+        if (percent > 0 && rr < 0) hasBadTP = true;
+
+        const rrEl = document.querySelector(`[data-rr-index="${index}"]`);
+        if (rrEl) {
+          rrEl.className = rr < 0 ? 'rr-box bad' : 'rr-box';
+          rrEl.querySelector('b').textContent = fmt(rr, 2) + 'R';
+        }
+      });
+
+      const realProfit = actualRisk * realRR;
+      const avgRR = weightedCount > 0 ? realRR / weightedCount : 0;
+      const openLeft = 100 - totalPct;
+
+      $('riskMoney').textContent = fmt(riskMoney) + ' cent';
+      $('suggestLot').textContent = fmt(suggestLot, 2) + ' lot';
+      $('slDistance').textContent = fmt(Math.abs(entry - sl), 3) + ' / ' + fmt(slPoints, 0) + ' pts';
+      $('actualRisk').textContent = fmt(actualRisk) + ' cent';
+      $('actualRiskPct').textContent = fmt(actualRiskPct, 2) + '%';
+      $('realProfit').textContent = fmt(realProfit) + ' cent';
+      $('pointValue').textContent = fmt(pointValueActual, 4) + ' cent/point';
+      $('totalPercent').textContent = fmt(totalPct, 0) + '%';
+      $('avgRR').textContent = fmt(avgRR, 2) + 'R';
+      $('bestRR').textContent = Number.isFinite(bestRR) ? fmt(bestRR, 2) + 'R' : '0.00R';
+      $('openLeft').textContent = fmt(openLeft, 0) + '%';
+
+      const rrEl = $('realRR');
+      rrEl.textContent = fmt(realRR, 2) + 'R';
+      rrEl.className = 'big' + (realRR >= 2 ? '' : realRR >= 1 ? ' warn' : ' loss');
+
+      $('directionTag').textContent = dir === 'buy' ? 'BUY / LONG' : dir === 'sell' ? 'SELL / SHORT' : 'CHECK';
+      $('splitCount').textContent = `${splitData.length} ORDERS`;
+
+      const riskDistancePrice = getRiskDistancePrice(entry, sl, dir);
+      const note = $('mainNote');
+      if (entry === sl || dir === 'unknown') {
+        note.className = 'note bad';
+        note.textContent = 'CHECK ENTRY / SL';
+      } else if (riskDistancePrice <= 0) {
+        note.className = 'note bad';
+        note.textContent = 'SL ผิดฝั่งกับ Direction';
+      } else if (hasBadTP) {
+        note.className = 'note bad';
+        note.textContent = 'มี TP ผิดฝั่ง ทำให้ RR ติดลบ';
+      } else if (Math.abs(totalPct - 100) > 0.001) {
+        note.className = 'note warn';
+        note.textContent = `Closed ${fmt(totalPct, 0)}% / Open left ${fmt(openLeft, 0)}%`;
+      } else {
+        note.className = 'note good';
+        note.textContent = 'OK / 100% CLOSED';
+      }
+
+      $('manualField').style.display = $('mode').value === 'manual' ? 'block' : 'none';
+
+      if (save) saveState();
+    }
+
+    function renderSplits() {
+      const box = $('splits');
+      box.innerHTML = '';
+
+      splitData.forEach((s, index) => {
+        const row = document.createElement('div');
+        row.className = 'split-row';
+        row.innerHTML = `
+          <div class="field">
+            <label>Close <span>TP ${index + 1}</span></label>
+            <input data-split-input data-index="${index}" data-key="percent" inputmode="decimal" autocomplete="off" value="${String(s.percent).replace(/"/g, '&quot;')}">
+          </div>
+          <div class="field">
+            <label>TP Price <span>price</span></label>
+            <input data-split-input data-index="${index}" data-key="price" inputmode="decimal" autocomplete="off" value="${String(s.price).replace(/"/g, '&quot;')}">
+          </div>
+          <div class="rr-box" data-rr-index="${index}">
+            <small>RR</small>
+            <b>0.00R</b>
+          </div>
+          <button class="xbtn danger" type="button" data-remove-index="${index}">×</button>
+        `;
+        box.appendChild(row);
+      });
+
+      box.querySelectorAll('[data-split-input]').forEach(input => {
+        input.addEventListener('input', (event) => {
+          const i = Number(event.target.dataset.index);
+          const key = event.target.dataset.key;
+          splitData[i][key] = event.target.value;
+          calculate();
+        });
+      });
+
+      box.querySelectorAll('[data-remove-index]').forEach(button => {
+        button.addEventListener('click', (event) => {
+          const i = Number(event.currentTarget.dataset.removeIndex);
+          splitData.splice(i, 1);
+          renderSplits();
+          calculate();
+        });
+      });
+    }
+
+    function addSplit() {
+      splitData.push({ percent: '0', price: '' });
+      renderSplits();
+      calculate();
+      const lastInput = document.querySelector(`[data-index="${splitData.length - 1}"][data-key="percent"]`);
+      if (lastInput) lastInput.focus();
+    }
+
+    function resetDefaults() {
+      const defaults = {
+        balance: '6632.9',
+        riskPct: '10',
+        entryPrice: '4500.000',
+        slPrice: '4450.000',
+        direction: 'auto',
+        actualLot: '0.70',
+        contract: '100',
+        pointSize: '0.01',
+        mode: 'auto',
+        manualValue: '1'
+      };
+      Object.entries(defaults).forEach(([id, value]) => { $(id).value = value; });
+      splitData = [
+        { percent: '50', price: '4535.262' },
+        { percent: '50', price: '4561.224' }
+      ];
+      renderSplits();
+      calculate();
+    }
+
+    function saveState() {
+      const state = {
+        fields: {
+          balance: $('balance').value,
+          riskPct: $('riskPct').value,
+          entryPrice: $('entryPrice').value,
+          slPrice: $('slPrice').value,
+          direction: $('direction').value,
+          actualLot: $('actualLot').value,
+          contract: $('contract').value,
+          pointSize: $('pointSize').value,
+          mode: $('mode').value,
+          manualValue: $('manualValue').value
+        },
+        splitData
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        $('saveTag').textContent = 'SAVED';
+      } catch (e) {
+        $('saveTag').textContent = 'LOCAL OFF';
+      }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        if (state.fields) {
+          Object.entries(state.fields).forEach(([id, value]) => {
+            if ($(id)) $(id).value = value;
+          });
+        }
+        if (Array.isArray(state.splitData)) {
+          splitData = state.splitData.map(item => ({
+            percent: String(item.percent ?? ''),
+            price: String(item.price ?? '')
+          }));
+        }
+      } catch (e) {}
+    }
+
+    function wireMainInputs() {
+      ['balance','riskPct','entryPrice','slPrice','actualLot','contract','pointSize','manualValue'].forEach(id => {
+        $(id).addEventListener('input', () => calculate());
+      });
+      ['direction','mode'].forEach(id => {
+        $(id).addEventListener('change', () => calculate());
+      });
+      $('addSplitBtn').addEventListener('click', addSplit);
+      $('resetBtn').addEventListener('click', resetDefaults);
+    }
+
+    wireMainInputs();
+    loadState();
+    renderSplits();
+    calculate({ save: false });
+  </script>
+</body>
+</html>
